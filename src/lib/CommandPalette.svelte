@@ -2,26 +2,24 @@
 	import { onMount } from 'svelte'
 	import Fuse from 'fuse.js'
 
+	export let commands: Command[] = []
+
 	let query = ''
 	let queryInput
-
 	let selectedIndex = 0
 	// TODO: contexts for commands, a la chrome
 
 	const options = {
 		keys: ['name'],
-		threshold: 0.3
+		threshold: 0.2
 	}
 
 	interface Command {
 		name: string
 		shortcut?: string
+		action: string
 	}
-	let commands: Command[] = [
-		{ name: 'Preferences', shortcut: 'cmd-p' },
-		{ name: 'Open File', shortcut: 'cmd-o' },
-		{ name: 'New Project', shortcut: 'cmd-n' },
-	]
+	let shortcuts = {}
 
 	const fuse = new Fuse(commands, options)
 
@@ -35,10 +33,11 @@
 	onMount(() => {
 		queryInput.focus()
 		window.addEventListener('keydown', handleKeydown)
+		// TODO: register shortcuts
 	})
 
 	function handleSelect (command: Command) {
-		console.log('handleSelect', command)
+		console.log('handleSelect', command.action)
 	}
 
 	function handleMouseover (index: number) {
@@ -46,55 +45,69 @@
 	}
 
 	function handleKeydown (e: KeyboardEvent) {
-		if (e.key === 'Tab') {
-			e.preventDefault()
-			queryInput.focus()
-		} else if (e.key === 'ArrowDown') {
-			selectedIndex = (selectedIndex + 1) % results.length
-		} else if (e.key === 'ArrowUp') {
-			selectedIndex = selectedIndex === 0 ? results.length - 1 : selectedIndex - 1
-		}
+		const action = {
+			Tab: () => {
+				e.preventDefault()
+				queryInput && queryInput.focus()
+			},
+			ArrowDown: () => selectedIndex = (selectedIndex + 1) % results.length,
+			ArrowUp: () => selectedIndex = selectedIndex === 0 ? results.length - 1 : selectedIndex - 1,
+			Enter: () => handleSelect(results[selectedIndex].item)
+		}[e.key] || (() => {})
+		action()
 	}
 </script>
 
-<div id="command-palette">
-	<input
-		id="query"
-		type="text"
-		bind:value={query}
-		bind:this={queryInput}
-		autocomplete='off'
-	/>
+<div id="container">
+	<div id="command-palette">
+		<input
+			id="query"
+			type="text"
+			bind:value={query}
+			bind:this={queryInput}
+			autocomplete='off'
+		/>
 
-	{#if results.length > 0}
-	<ul id="results">
-		{#each results as result, index}
-			<li class:selected={index === selectedIndex}>
-				<button
-					on:click={() => handleSelect(result.item)}
-					on:mouseover={() => handleMouseover(index)}
-					on:focus={() => handleMouseover(index)}
-				>
-					<div class="name">
-						{result.item.name}
-					</div>
-					<div class="shortcut">
-						{result.item.shortcut.replace('cmd-', '⌘').toUpperCase()}
-					</div>
-				</button>
-			</li>
-		{/each}
-	</ul>
-	{:else}
-	<div id="no-results">
-		No commands found.
+		{#if results.length > 0}
+			<ul id="results">
+				{#each results as result, index (result.item.name)}
+					<li class:selected={index === selectedIndex}>
+						<button
+							on:click={() => handleSelect(result.item)}
+							on:mouseover={() => handleMouseover(index)}
+							on:focus={() => handleMouseover(index)}
+						>
+							<div class="name">
+								{result.item.name}
+							</div>
+							{#if result.item.shortcut}
+								<div class="shortcut">
+									{result.item.shortcut.replace('cmd-', '⌘').toUpperCase()}
+								</div>
+							{/if}
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<div id="no-results">
+				No commands found.
+			</div>
+		{/if}
 	</div>
-	{/if}
 </div>
 
 <style>
+	#container {
+		position: absolute;
+		top: 15%;
+		left: 0;
+		right: 0;
+		padding: 1rem;
+	}
 	#command-palette {
-		min-width: 300px;
+		margin: 0 auto;
+		min-width: 400px;
 		max-width: 700px;
 		border: 1px solid #ccc;
 		border-radius: 4px;
@@ -114,6 +127,9 @@
 		padding: 0;
 		margin: 0;
 		margin-top: 0.5rem;
+		max-height: 400px;
+		overflow-x: hidden;
+		overflow-y: auto;
 	}
 	#results li {
 		padding: 0;
