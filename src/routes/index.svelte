@@ -3,8 +3,8 @@
 </script>
 
 <script lang="ts">
-	import CommandPalette from '$lib/CommandPalette.svelte'
-	import type { Command } from '$lib/CommandPalette.svelte'
+	import CommandPaletteContainer from '$lib/CommandPaletteContainer.svelte';
+	import type { Command } from '$lib/types'
 
 	const commands: Command[] = [
 		{ name: 'Preferences', shortcut: 'cmd-p', action: 'myApp.openPrefs' },
@@ -20,5 +20,18 @@
 	]
 </script>
 
-<CommandPalette {commands} />
+<CommandPaletteContainer {commands} />
+
+<div id="container">
+	Press Ctrl-P to invoke the command palette.
+</div>
+
+<style>
+	#container {
+		font-size: 2rem;
+		padding: 5rem;
+		border: 1px solid green;
+		background-color: lightgreen;
+	}
+</style>
 

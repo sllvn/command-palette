@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import Fuse from 'fuse.js'
+	import type { Command } from './types'
 
 	export let commands: Command[] = []
+	export let onClose: Function
 
 	let query = ''
 	let queryInput
@@ -14,11 +16,6 @@
 		threshold: 0.2
 	}
 
-	interface Command {
-		name: string
-		shortcut?: string
-		action: string
-	}
 	let shortcuts = {}
 
 	const fuse = new Fuse(commands, options)
@@ -34,10 +31,13 @@
 		queryInput.focus()
 		window.addEventListener('keydown', handleKeydown)
 		// TODO: register shortcuts
+
+		return () => window.removeEventListener('keydown', handleKeydown)
 	})
 
 	function handleSelect (command: Command) {
 		console.log('handleSelect', command.action)
+		onClose()
 	}
 
 	function handleMouseover (index: number) {
@@ -52,60 +52,52 @@
 			},
 			ArrowDown: () => selectedIndex = (selectedIndex + 1) % results.length,
 			ArrowUp: () => selectedIndex = selectedIndex === 0 ? results.length - 1 : selectedIndex - 1,
-			Enter: () => handleSelect(results[selectedIndex].item)
+			Enter: () => handleSelect(results[selectedIndex].item),
 		}[e.key] || (() => {})
 		action()
 	}
 </script>
 
-<div id="container">
-	<div id="command-palette">
-		<input
-			id="query"
-			type="text"
-			bind:value={query}
-			bind:this={queryInput}
-			autocomplete='off'
-		/>
+<div id="command-palette">
+	<input
+		id="query"
+		type="text"
+		bind:value={query}
+		bind:this={queryInput}
+		autocomplete='off'
+	/>
 
-		{#if results.length > 0}
-			<ul id="results">
-				{#each results as result, index (result.item.name)}
-					<li class:selected={index === selectedIndex}>
-						<button
-							on:click={() => handleSelect(result.item)}
-							on:mouseover={() => handleMouseover(index)}
-							on:focus={() => handleMouseover(index)}
-						>
-							<div class="name">
-								{result.item.name}
+	{#if results.length > 0}
+		<ul id="results">
+			{#each results as result, index (result.item.name)}
+				<li class:selected={index === selectedIndex}>
+					<button
+						on:click={() => handleSelect(result.item)}
+						on:mouseover={() => handleMouseover(index)}
+						on:focus={() => handleMouseover(index)}
+					>
+						<div class="name">
+							{result.item.name}
+						</div>
+						{#if result.item.shortcut}
+							<div class="shortcut">
+								{result.item.shortcut.replace('cmd-', '⌘').toUpperCase()}
 							</div>
-							{#if result.item.shortcut}
-								<div class="shortcut">
-									{result.item.shortcut.replace('cmd-', '⌘').toUpperCase()}
-								</div>
-							{/if}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{:else}
-			<div id="no-results">
-				No commands found.
-			</div>
-		{/if}
-	</div>
+						{/if}
+					</button>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<div id="no-results">
+			No commands found.
+		</div>
+	{/if}
 </div>
 
 <style>
-	#container {
-		position: absolute;
-		top: 15%;
-		left: 0;
-		right: 0;
-		padding: 1rem;
-	}
 	#command-palette {
+		background-color: #fff;
 		margin: 0 auto;
 		min-width: 400px;
 		max-width: 700px;
@@ -113,6 +105,7 @@
 		border-radius: 4px;
 		padding: 0.5rem;
 		font-size: 16px;
+		box-shadow: 3px 3px 3px #ccc;
 	}
 	#query {
 		width: 100%;
