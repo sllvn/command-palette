@@ -26,7 +26,7 @@
 
 	onMount(() => {
 		// @ts-ignore
-		window.__commands = (): Command[] => (
+		window.__getCommands__ = (): Command[] => (
 			commands.map(({ handler, ...rest }) => ({ ...rest }))
 		)
 
