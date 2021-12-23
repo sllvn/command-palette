@@ -8,7 +8,7 @@
 	let commands: Command[]
 	try {
 		// @ts-ignore
-		commands = window.__getCommands__()
+		commands = window.__COMMAND_PALETTE__.getCommands()
 	} catch (err) {
 		console.warn('No command palette commands found.')
 		commands = []

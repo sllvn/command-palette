@@ -26,9 +26,13 @@
 
 	onMount(() => {
 		// @ts-ignore
-		window.__getCommands__ = (): Command[] => (
-			commands.map(({ handler, ...rest }) => ({ ...rest }))
-		)
+		window.__COMMAND_PALETTE__ = {
+			name: 'Browser demo',
+			specVersion: '0.1.0',
+			getCommands (): Command[] {
+				return commands.map(({ handler, ...rest }) => ({ ...rest }))
+			}
+		}
 
 		commands.forEach(command => {
 			// @ts-ignore
